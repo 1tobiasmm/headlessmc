@@ -1,0 +1,146 @@
+# headless-balance-bot configuration. Copy to config.yaml and edit.
+# Secrets are never written here: accounts and webhooks name ENVIRONMENT VARIABLES.
+
+server:
+  host: mc.example.com        # REQUIRED. The server you own and are allowed to connect bots to.
+  port: 25565
+  version: auto               # "auto" = status-ping once (cached 10 min) and pick the protocol; or pin e.g. "1.21.4".
+                              # Run `npm run probe -- mc.example.com` to see what your server reports.
+  connectTimeoutMs: 20000
+
+# --- accounts -------------------------------------------------------------------------
+accounts:
+  # Cracked/offline-mode server only (online-mode=false). No credentials involved.
+  - id: offline-1
+    username: BalanceBot1
+    auth: offline
+
+  # Online-mode server, Microsoft account. First-time sign-in is a one-off step OUTSIDE this process:
+  #   npm run auth -- --config config.yaml --id main
+  # The refresh token is cached under auth.profilesFolder and renewed automatically. Until then the
+  # bot stops with reason "auth_required" (it never prompts).
+  # - id: main
+  #   username: you@example.com   # cache key; the in-game name comes from the account's profile
+  #   auth: microsoft
+
+  # Online-mode server, access token you obtained yourself. The values live in environment variables.
+  # Minecraft access tokens expire (about a day), so prefer `microsoft` for long unattended runs.
+  # - id: token-1
+  #   username: SomeName
+  #   auth: token
+  #   accessTokenEnv: HMC_TOKEN_1_ACCESS
+  #   profileIdEnv: HMC_TOKEN_1_UUID
+
+# Many offline accounts at once: BotNN usernames (3-16 chars, [A-Za-z0-9_]).
+# accountGroups:
+#   - idPrefix: farm-
+#     usernamePrefix: Farm
+#     count: 50
+#     start: 1
+#     pad: 3
+
+auth:
+  profilesFolder: ./data/auth
+
+# --- scaling --------------------------------------------------------------------------
+limits:
+  maxBots: 1000               # running bots (connecting/online/reconnecting) allowed at once
+  maxConcurrentBots: 50       # bots holding a connection at once; the rest wait in the join queue
+  maxConcurrentConnecting: 3  # handshakes in flight at once
+  maxQueue: 1000              # bound on the join queue; start requests beyond it are rejected
+  joinDelayMs: 3000           # minimum gap between any two connection attempts (all bots, incl. reconnects)
+  joinJitterMs: 500           # extra random 0..N ms on that gap
+
+reconnect:
+  enabled: true
+  initialDelayMs: 5000
+  maxDelayMs: 300000
+  factor: 2
+  jitter: 0.2                 # +-20 %
+  maxAttempts: 0              # 0 = unlimited
+  resetAfterMs: 60000         # staying online this long resets the failure count
+
+kick:
+  cooldownSeconds: 900        # a kicked bot may not be restarted for this long
+  banCooldownSeconds: 86400   # ... and for this long when the text matches banPattern
+  banPattern: '\bban(?:ned)?\b|blacklist'
+  globalPauseSeconds: 60      # all new joins pause this long after any kick (>= cooldownSeconds after a ban)
+  # A kick whose whole text is a plain shutdown notice ("Server closed") is a dropped connection
+  # (reconnect with backoff), not a kick. Set to '' to treat every disconnect packet as a kick.
+  # transientPattern: '^\s*(?:server closed|server is (?:restarting|stopping|shutting down)|server (?:restart|shutdown|stopping))\s*[.!]?\s*$'
+
+budget:                       # admission control, not per-bot isolation; see README "Resource budget"
+  enabled: true
+  memoryMBPerBot: 60          # hold new joins while measured RSS per online bot is above this
+  cpuPercentPerBot: 3         # ... or total CPU% exceeds this x online bots (+10 %)
+  maxRssMB: 0                 # absolute cap on process RSS; 0 = none
+  checkIntervalMs: 5000
+  minBotsForAverage: 5
+
+client:
+  viewDistance: 2             # smallest the protocol allows; the server sends fewer chunks
+  locale: en_us
+  lean: true                  # skip deserialising chunk/entity/inventory packets nothing here reads
+  disableChatSigning: false
+  keepAliveTimeoutMs: 30000
+
+# --- balance --------------------------------------------------------------------------
+# Pick ONE source. Nothing about any server's wording is built in: you give the pattern, after
+# reading the first-connect dump (debug.dump below). Patterns are case-insensitive regexes and MUST
+# contain a named group (?<amount>...).
+balance:
+  source: command             # http | command | sidebar
+  pollIntervalSec: 300        # 0 = read once after joining
+  minReadIntervalSec: 30      # floor between two reads of the same bot (polling and API refresh)
+  readyDelayMs: 3000          # wait after joining before the first read
+  readTimeoutMs: 15000
+  currencySymbols: '$'        # accepted as a leading symbol on the captured text
+  suffixes: {}                # e.g. { K: 1000, M: 1000000, B: 1000000000 } if the server abbreviates
+  command:
+    text: /bal                # PLACEHOLDER: the server's own balance command
+    replyPattern: 'REPLACE_AFTER_DUMP (?<amount>[\d,.]+)'   # PLACEHOLDER: write from the dump
+    accept: [system]          # message kinds that may carry the reply: system | actionbar | player
+  # sidebar:
+  #   labelPattern: '^REPLACE_ME: (?<amount>[\d,.]+)'
+  #   surfaces: [sidebar]     # sidebar | tabHeader | tabFooter
+  # http:
+  #   url: https://api.example.com/v1/balance/{username}   # {username} and {uuid} are substituted
+  #   method: GET
+  #   bearerTokenEnv: HMC_BALANCE_API_KEY                   # env var holding YOUR key
+  #   headersFromEnv: {}                                    # header name -> env var name
+  #   jsonPath: result.money                                # dot path into the JSON response
+
+debug:
+  dump:                       # first-connect discovery dump: raw sidebar rows, tab text, chat components
+    enabled: true             # turn off once your patterns work; the file can contain other players' chat
+    file: ./data/debug/first-connect.jsonl
+    maxBots: 2                # only the first N bots are dumped, once each
+    windowSec: 30
+    maxLines: 500
+
+# --- CLI support ----------------------------------------------------------------------
+observe:
+  messageBuffer: 100          # last N chat/system/action-bar messages kept per bot (CLI tail/dump); 0 = none
+  trackScoreboard: true       # keep sidebar/tab state for every bot (CLI `sidebar`); false saves a little CPU/RAM
+  maxReplyWindowMs: 30000     # upper bound on the CLI's per-command reply window
+
+audit:
+  file: ./data/audit.jsonl    # every command/chat a bot is made to send, with actor (cli | api | poll)
+  polls: true                 # false = leave the automatic balance command out (CLI/API sends are ALWAYS recorded)
+
+# --- reports --------------------------------------------------------------------------
+reports:
+  file: ./data/reports.jsonl  # JSON lines; null disables
+  keepRecent: 500             # in-memory ring served by GET /reports
+  # webhook:
+  #   url: https://hooks.example.com/balance
+  #   tokenEnv: HMC_WEBHOOK_TOKEN   # optional bearer token from this env var
+  #   timeoutMs: 5000
+  #   maxQueue: 500
+  #   maxAttempts: 3
+
+# --- control API ----------------------------------------------------------------------
+api:
+  bind: 127.0.0.1             # loopback only. Non-loopback is refused unless HMC_ALLOW_NON_LOOPBACK=1 (containers; see README)
+  port: 8787
+  tokenEnv: HMC_API_TOKEN     # name of the env var holding the bearer token; the process refuses to start without it

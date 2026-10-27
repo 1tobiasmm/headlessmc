@@ -1,0 +1,34 @@
+# /etc/systemd/system/headless-balance-bot.service
+#   sudo useradd --system --home /var/lib/headless-balance-bot --shell /usr/sbin/nologin hmc
+#   sudo install -d -o hmc -g hmc /var/lib/headless-balance-bot
+#   sudo install -d /etc/headless-balance-bot   # config.yaml (0644) and env (0600, root-owned) go here
+#   sudo systemctl daemon-reload && sudo systemctl enable --now headless-balance-bot
+[Unit]
+Description=Headless Minecraft balance bots
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=hmc
+Group=hmc
+WorkingDirectory=/var/lib/headless-balance-bot
+# HMC_API_TOKEN=... and any account/webhook variables; keep this file 0600
+EnvironmentFile=/etc/headless-balance-bot/env
+ExecStart=/usr/bin/node --max-old-space-size=512 /opt/headless-balance-bot/src/main.js --config /etc/headless-balance-bot/config.yaml --autostart
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=10
+# Hard limits: the in-process budget only holds back new joins.
+MemoryMax=1G
+CPUQuota=100%
+TasksMax=64
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/headless-balance-bot
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+
+[Install]
+WantedBy=multi-user.target

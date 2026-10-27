@@ -1,0 +1,24 @@
+# docker compose -f deploy/docker-compose.yml up -d
+# Put config.yaml next to this file's parent (../config.yaml) and secrets in ../.env (chmod 600).
+services:
+  bot:
+    build: ..
+    image: headless-balance-bot:local
+    restart: unless-stopped
+    env_file: ../.env              # HMC_API_TOKEN=... plus any account/webhook variables
+    environment:
+      HMC_AUTOSTART: "1"           # start every configured account at launch
+      HMC_ALLOW_NON_LOOPBACK: "1"  # only because the container must listen on its own interface; the port is published on host loopback below
+    volumes:
+      - ../config.yaml:/config/config.yaml:ro
+      - bot-data:/app/data         # reports, dump file, Microsoft token cache
+    ports:
+      - "127.0.0.1:8787:8787"      # loopback on the host only. api.bind must be 0.0.0.0 INSIDE the container.
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 1g                  # hard cgroup caps: the per-process budget is only admission control
+    cpus: 1.0
+volumes:
+  bot-data: {}

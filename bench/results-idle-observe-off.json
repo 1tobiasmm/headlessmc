@@ -1,0 +1,107 @@
+{
+  "env": {
+    "node": "v22.22.0",
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.80GHz",
+    "cores": 4,
+    "totalMemGB": 15.7,
+    "minecraftVersion": "1.21.4",
+    "traffic": "idle",
+    "observe": "off",
+    "trafficPerBotPerSec": {
+      "moves": 0,
+      "sidebarUpdates": 1,
+      "chat": 0
+    },
+    "durationSec": 20,
+    "server": "local mock (loopback)"
+  },
+  "results": [
+    {
+      "bots": 25,
+      "lean": true,
+      "online": 25,
+      "stillOnline": true,
+      "rampSeconds": 3.33,
+      "rampCpuSeconds": 3.74,
+      "baselineRssMB": 92.57,
+      "steadyRssMB": 171.77,
+      "steadyPssMB": 140.28,
+      "heapUsedMB": 51.69,
+      "marginalMBPerBot": 3.168,
+      "steadyCpuPercentTotal": 0.99,
+      "cpuPercentPerBot": 0.0396,
+      "botsPerGB": 294,
+      "mockServerCpuPercent": 1.24,
+      "idleRssBeforeStartMB": 92.57
+    },
+    {
+      "bots": 100,
+      "lean": true,
+      "online": 100,
+      "stillOnline": true,
+      "rampSeconds": 10.64,
+      "rampCpuSeconds": 10.92,
+      "baselineRssMB": 91.03,
+      "steadyRssMB": 184.42,
+      "steadyPssMB": 152.5,
+      "heapUsedMB": 79.68,
+      "marginalMBPerBot": 0.934,
+      "steadyCpuPercentTotal": 2.27,
+      "cpuPercentPerBot": 0.0227,
+      "botsPerGB": 999,
+      "mockServerCpuPercent": 2.22,
+      "idleRssBeforeStartMB": 91.03
+    },
+    {
+      "bots": 250,
+      "lean": true,
+      "online": 250,
+      "stillOnline": true,
+      "rampSeconds": 24.91,
+      "rampCpuSeconds": 23.87,
+      "baselineRssMB": 91.16,
+      "steadyRssMB": 222.79,
+      "steadyPssMB": 190.84,
+      "heapUsedMB": 116.55,
+      "marginalMBPerBot": 0.527,
+      "steadyCpuPercentTotal": 4.74,
+      "cpuPercentPerBot": 0.019,
+      "botsPerGB": 1772,
+      "mockServerCpuPercent": 3.75,
+      "idleRssBeforeStartMB": 91.16
+    },
+    {
+      "bots": 500,
+      "lean": true,
+      "online": 500,
+      "stillOnline": true,
+      "rampSeconds": 52.18,
+      "rampCpuSeconds": 47.24,
+      "baselineRssMB": 90.18,
+      "steadyRssMB": 263.5,
+      "steadyPssMB": 231.53,
+      "heapUsedMB": 158.43,
+      "marginalMBPerBot": 0.347,
+      "steadyCpuPercentTotal": 7.97,
+      "cpuPercentPerBot": 0.0159,
+      "botsPerGB": 2694,
+      "mockServerCpuPercent": 5.66,
+      "idleRssBeforeStartMB": 90.18
+    }
+  ],
+  "fits": [
+    {
+      "lean": true,
+      "sizes": [
+        25,
+        100,
+        250,
+        500
+      ],
+      "rssMBPerBot": 0.197,
+      "rssInterceptMB": 167.62,
+      "botsPerGB": 4357,
+      "cpuPercentPerBot": 0.0146
+    }
+  ]
+}
